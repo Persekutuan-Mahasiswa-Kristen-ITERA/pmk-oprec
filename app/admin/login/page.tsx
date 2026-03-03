@@ -48,7 +48,7 @@ export default function AdminLogin() {
             <Card className="w-full max-w-sm bg-white border-t-8 border-t-accent shadow-2xl rounded-3xl relative z-10">
                 <CardHeader className="flex flex-col items-center pt-10 pb-6">
                     <div className="bg-primary/5 p-4 rounded-full mb-4">
-                        <Image src="/pmk-logo.png" alt="PMK Logo" width={80} height={80} />
+                        <Image src="https://res.cloudinary.com/dm3zixaz4/image/upload/v1772567328/PMK_LOGO-removebg-preview_oydcdq.avif" alt="PMK Logo" width={80} height={80} />
                     </div>
                     <CardTitle className="font-serif text-2xl text-foreground font-bold">Admin Portal</CardTitle>
                     <CardDescription className="text-center font-medium mt-2">

@@ -12,13 +12,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Loader2, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function RecruitmentForm({ recruitment }: { recruitment: any }) {
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const supabase = createClient();
 
-    const dynamicFields: FieldConfig[] = recruitment.form_fields || [];
+    const dynamicFields: FieldConfig[] = (recruitment.form_fields || []).map((f: FieldConfig) => ({
+        ...f,
+        id: f.id.replace(/\./g, '_')
+    }));
 
     // Always present PMK fields
     const pmkFields: FieldConfig[] = [
@@ -167,6 +171,18 @@ export function RecruitmentForm({ recruitment }: { recruitment: any }) {
 
             <Card className="border-t-8 border-t-accent shadow-xl bg-[#FAF6F0] rounded-3xl overflow-hidden">
                 <CardHeader className="bg-white pb-8 border-b border-border/50">
+                <div className="w-full flex items-center justify-center">
+                    <div className="relative w-32 h-32 md:w-40 md:h-40 mb-2 rounded-full border-4 border-accent shadow-lg bg-white flex items-center justify-center p-2 z-10 overflow-hidden">
+                    <Image
+                        src="https://res.cloudinary.com/dm3zixaz4/image/upload/v1772567328/PMK_LOGO-removebg-preview_oydcdq.avif"
+                        alt="PMK ITERA Logo"
+                        width={150}
+                        height={150}
+                        className="object-contain"
+                        priority
+                    />
+                </div>
+                </div>
                     <CardTitle className="font-serif text-3xl md:text-4xl text-primary font-bold">{recruitment.title}</CardTitle>
                     <CardDescription className="text-base text-foreground/80 mt-4 whitespace-pre-wrap leading-relaxed">
                         {recruitment.description}

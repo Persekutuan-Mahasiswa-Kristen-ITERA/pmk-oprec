@@ -82,7 +82,7 @@ export function ApplicantTable({ submissions, recruitmentTitle }: { submissions:
                                 <TableCell className="font-medium">{index + 1}</TableCell>
                                 <TableCell className="font-medium text-primary">{sub.applicant_name}</TableCell>
                                 <TableCell>{sub.applicant_nim}</TableCell>
-                                <TableCell>{sub.answers?.["Prodi"] || "-"}</TableCell>
+                                <TableCell>{sub.answers?.["Program Studi"] || "-"}</TableCell>
                                 <TableCell>{sub.answers?.["Angkatan"] || "-"}</TableCell>
                                 <TableCell>{new Date(sub.submitted_at).toLocaleDateString("id-ID")}</TableCell>
                                 <TableCell className="text-right">

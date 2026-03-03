@@ -28,7 +28,7 @@ export default async function LandingPage() {
       <div className="w-full max-w-5xl px-4 flex flex-col items-center pt-16 mt-4">
         <div className="relative w-32 h-32 md:w-40 md:h-40 mb-8 rounded-full border-4 border-accent shadow-xl bg-white flex items-center justify-center p-2 z-10 overflow-hidden">
           <Image
-            src="/pmk-logo.png"
+            src="https://res.cloudinary.com/dm3zixaz4/image/upload/v1772567328/PMK_LOGO-removebg-preview_oydcdq.avif"
             alt="PMK ITERA Logo"
             width={150}
             height={150}

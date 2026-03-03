@@ -135,7 +135,7 @@ export function RecruitmentBuilder({ initialData }: { initialData?: any }) {
     };
 
     const addField = () => {
-        setFields([...fields, { id: `field_${Date.now()}`, type: "short_text", label: "Pertanyaan Baru", required: true }]);
+        setFields([...fields, { id: `field_${Date.now()}_${Math.random().toString(36).substring(2)}`, type: "short_text", label: "Pertanyaan Baru", required: true }]);
     };
 
     const updateField = (id: string, updates: Partial<FieldConfig>) => {
@@ -150,7 +150,7 @@ export function RecruitmentBuilder({ initialData }: { initialData?: any }) {
         setTemplate(val);
         if (val !== "Custom") {
             // @ts-expect-error Types are dynamic based on template
-            const templateFields = TEMPLATES[val].map(f => ({ ...f, id: `field_${Date.now()}_${Math.random()}` }));
+            const templateFields = TEMPLATES[val].map(f => ({ ...f, id: `field_${Date.now()}_${Math.random().toString(36).substring(2)}` }));
             setFields(templateFields);
         }
     };
