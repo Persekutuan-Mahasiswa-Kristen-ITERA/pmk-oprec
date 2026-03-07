@@ -3,10 +3,15 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Download, ExternalLink, Eye } from "lucide-react";
+import { Download, ExternalLink, Eye, Loader2 } from "lucide-react";
 import Papa from "papaparse";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { Progress } from "@/components/ui/progress";
 
 export interface Submission {
     id: string;
@@ -22,6 +27,113 @@ export interface Submission {
 export function ApplicantTable({ submissions, recruitmentTitle, recruitmentId, currentPage = 1, totalPages = 1 }: { submissions: Submission[]; recruitmentTitle: string; recruitmentId: string; currentPage?: number; totalPages?: number; }) {
     const router = useRouter();
     const supabase = createClient();
+    const { toast } = useToast();
+
+    const [isExportingZip, setIsExportingZip] = useState(false);
+    const [exportProgress, setExportProgress] = useState(0);
+    const [exportMessage, setExportMessage] = useState("");
+
+    const exportAllFilesToZip = async () => {
+        setIsExportingZip(true);
+        setExportProgress(0);
+        setExportMessage("Mempersiapkan pengunduhan...");
+
+        try {
+            const { data: allSubmissions, error } = await supabase
+                .from("submissions")
+                .select("applicant_name, applicant_nim, files")
+                .eq("recruitment_id", recruitmentId);
+
+            if (error) throw error;
+
+            if (!allSubmissions || allSubmissions.length === 0) {
+                toast({ title: "Informasi", description: "Belum ada pendaftar untuk diexport." });
+                setIsExportingZip(false);
+                return;
+            }
+
+            const submissionsWithFiles = allSubmissions.filter(sub => sub.files && sub.files.length > 0);
+
+            if (submissionsWithFiles.length === 0) {
+                toast({ title: "Informasi", description: "Tidak ada file yang diupload oleh pendaftar." });
+                setIsExportingZip(false);
+                return;
+            }
+
+            const zip = new JSZip();
+            const safeRecruitmentName = recruitmentTitle.replace(/[^a-zA-Z0-9 -]/g, "").replace(/\s+/g, "_");
+            const folderName = `OPREC_${safeRecruitmentName}`;
+            const rootFolder = zip.folder(folderName);
+
+            let totalFiles = 0;
+            submissionsWithFiles.forEach(sub => totalFiles += sub.files.length);
+
+            let downloadedFiles = 0;
+            let successCount = 0;
+            let errorCount = 0;
+
+            for (const sub of submissionsWithFiles) {
+                const safeName = sub.applicant_name.replace(/[^a-zA-Z0-9 ]/g, "").trim();
+                const safeNim = sub.applicant_nim.replace(/[^0-9]/g, "");
+                const applicantFolderName = `${safeNim}_${safeName}`;
+                const applicantFolder = rootFolder!.folder(applicantFolderName);
+
+                for (let i = 0; i < sub.files.length; i++) {
+                    const fileUrl = sub.files[i];
+                    try {
+                        const response = await fetch(fileUrl);
+                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                        const blob = await response.blob();
+
+                        let fileName = fileUrl.split('/').pop() || `file_${i + 1}`;
+                        fileName = fileName.split('?')[0];
+                        fileName = decodeURIComponent(fileName);
+                        fileName = fileName.replace(/^\d+-/, ''); // Strip timestamp
+
+                        applicantFolder!.file(fileName, blob);
+                        successCount++;
+                    } catch (err) {
+                        console.error("Fetch error for file: ", fileUrl, err);
+                        errorCount++;
+                    }
+                    downloadedFiles++;
+                    setExportProgress((downloadedFiles / totalFiles) * 100);
+                    setExportMessage(`Mengunduh file ${downloadedFiles} dari ${totalFiles}...`);
+                }
+            }
+
+            setExportMessage("Membuat file ZIP...");
+            const content = await zip.generateAsync({ type: "blob" });
+
+            const dateStr = new Date().toISOString().split('T')[0];
+            saveAs(content, `${folderName}_${dateStr}.zip`);
+
+            if (errorCount > 0) {
+                toast({
+                    title: "Selesai dengan Catatan",
+                    description: `Berhasil mengunduh ${successCount} file. Gagal mengunduh ${errorCount} file.`,
+                    variant: "destructive"
+                });
+            } else {
+                toast({
+                    title: "Berhasil!",
+                    description: "Semua file berhasil diunduh! 🙏",
+                });
+            }
+        } catch (error) {
+            console.error(error);
+            toast({
+                title: "Gagal Mengunduh",
+                description: "Terjadi kesalahan saat memproses ekspor file ZIP.",
+                variant: "destructive"
+            });
+        } finally {
+            setIsExportingZip(false);
+            setExportMessage("");
+            setExportProgress(0);
+        }
+    };
+
     const exportToCSV = async () => {
         // Fetch all submissions for this recruitment
         const { data: allSubmissions } = await supabase
@@ -69,11 +181,32 @@ export function ApplicantTable({ submissions, recruitmentTitle, recruitmentId, c
 
     return (
         <div className="space-y-4">
-            <div className="flex justify-end">
-                <Button onClick={exportToCSV} className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm rounded-xl px-6">
-                    <Download className="w-4 h-4 mr-2" />
-                    Export CSV
-                </Button>
+            <div className="flex flex-col sm:flex-row justify-between items-center bg-white p-4 rounded-2xl border-2 border-border shadow-sm mb-4 gap-4">
+                <div className="w-full sm:w-1/2 flex items-center space-x-4">
+                    {isExportingZip && (
+                        <div className="w-full flex-1">
+                            <div className="flex justify-between items-center mb-1">
+                                <span className="text-xs font-semibold text-primary">{exportMessage}</span>
+                                <span className="text-xs text-muted-foreground">{Math.round(exportProgress)}%</span>
+                            </div>
+                            <Progress value={exportProgress} className="h-2 bg-accent/20" />
+                        </div>
+                    )}
+                </div>
+                <div className="flex space-x-3 w-full sm:w-auto justify-end">
+                    <Button
+                        onClick={exportAllFilesToZip}
+                        disabled={isExportingZip}
+                        className="bg-[#FAF6F0] text-primary border-2 border-primary hover:bg-[#F5E6C8] shadow-sm rounded-xl px-6 transition-colors"
+                    >
+                        {isExportingZip ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+                        Export Semua File (.zip)
+                    </Button>
+                    <Button onClick={exportToCSV} className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm rounded-xl px-6">
+                        <Download className="w-4 h-4 mr-2" />
+                        Export CSV
+                    </Button>
+                </div>
             </div>
 
             <div className="rounded-2xl border-2 border-border bg-white shadow-sm overflow-hidden">
