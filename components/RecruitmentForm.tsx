@@ -48,7 +48,7 @@ export function RecruitmentForm({ recruitment }: { recruitment: any }) {
     const fixedFields: FieldConfig[] = [
         { id: "applicant_name", type: "short_text", label: "Nama Lengkap", required: true },
         { id: "applicant_nim", type: "short_text", label: "NIM", required: true },
-        { id: "applicant_email", type: "short_text", label: "Email", required: true, placeholder: "email@example.com" },
+        { id: "applicant_email", type: "short_text", label: "Email", required: true, placeholder: "nama.nim@student.itera.ac.id" },
         { id: "whatsapp", type: "short_text", label: "No. WhatsApp", required: true },
         { id: "angkatan", type: "short_text", label: "Angkatan", required: true, placeholder: "Contoh: 2022" },
         { id: "prodi", type: "short_text", label: "Program Studi", required: true },
